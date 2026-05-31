@@ -1,0 +1,9 @@
+{
+  "name": "futureme-netlify",
+  "version": "1.0.0",
+  "description": "AI reflection guide deployment configuration for Netlify",
+  "type": "module",
+  "dependencies": {
+    "@google/generative-ai": "^0.11.4"
+  }
+}

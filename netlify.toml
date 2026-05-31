@@ -1,0 +1,14 @@
+[build]
+  publish = "frontend"
+  functions = "netlify/functions"
+
+# Redirect API calls to Serverless Functions in production
+[[redirects]]
+  from = "/api/generate-futureme"
+  to = "/.netlify/functions/generate-futureme"
+  status = 200
+
+[[redirects]]
+  from = "/api/chat-futureme"
+  to = "/.netlify/functions/chat-futureme"
+  status = 200
