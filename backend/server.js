@@ -90,16 +90,33 @@ Return only valid JSON in this exact format:
 
 Make it specific. Avoid generic motivation. Avoid clichés. Make it emotional but practical.`;
 
-    // Query Gemini
-    const model = genAI.getGenerativeModel({
-      model: "gemini-3.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-      }
-    });
+    // Query Gemini using fallback mechanism
+    const models = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash-lite"];
+    let text = "";
+    let lastError = null;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    for (const modelName of models) {
+      try {
+        console.log(`Attempting generation with model: ${modelName}`);
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          generationConfig: {
+            responseMimeType: "application/json",
+          }
+        });
+        const result = await model.generateContent(prompt);
+        text = result.response.text();
+        if (text) break;
+      } catch (err) {
+        console.warn(`Model ${modelName} failed:`, err.message);
+        lastError = err;
+      }
+    }
+
+    if (!text) {
+      throw lastError || new Error("All generative models failed to respond.");
+    }
+
     const data = cleanAndParseJSON(text);
 
     return res.json({
@@ -163,10 +180,27 @@ ${userProfile.name} asks: "${question}"
 
 Reply in 2-5 short paragraphs. Give at least one clear action. Keep the tone matching the chosen mode: ${userProfile.tone}.`;
 
-    // Query Gemini
-    const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
-    const result = await model.generateContent(prompt);
-    const reply = result.response.text();
+    // Query Gemini using fallback mechanism
+    const models = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash-lite"];
+    let reply = "";
+    let lastError = null;
+
+    for (const modelName of models) {
+      try {
+        console.log(`Attempting chat generation with model: ${modelName}`);
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        reply = result.response.text();
+        if (reply) break;
+      } catch (err) {
+        console.warn(`Model ${modelName} failed in chat:`, err.message);
+        lastError = err;
+      }
+    }
+
+    if (!reply) {
+      throw lastError || new Error("All generative models failed to respond.");
+    }
 
     return res.json({
       success: true,

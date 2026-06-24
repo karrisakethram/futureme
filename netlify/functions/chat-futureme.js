@@ -77,11 +77,28 @@ ${userProfile.name} asks: "${question}"
 
 Reply in 2-5 short paragraphs. Give at least one clear action. Keep the tone matching the chosen mode: ${userProfile.tone}.`;
 
-    // Query Gemini 3.5 Flash
+    // Query Gemini using fallback mechanism
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
-    const result = await model.generateContent(prompt);
-    const reply = result.response.text();
+    const models = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash-lite"];
+    let reply = "";
+    let lastError = null;
+
+    for (const modelName of models) {
+      try {
+        console.log(`Attempting chat generation with model: ${modelName}`);
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        reply = result.response.text();
+        if (reply) break;
+      } catch (err) {
+        console.warn(`Model ${modelName} failed in chat:`, err.message);
+        lastError = err;
+      }
+    }
+
+    if (!reply) {
+      throw lastError || new Error("All generative models failed to respond.");
+    }
 
     return {
       statusCode: 200,
